@@ -14,11 +14,12 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.MalformedURLException;
+import java.net.*;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -95,8 +96,33 @@ public class FileStorageServiceImpl implements FileStorageService {
 
     @Override
     public List<ImageInfo> getAllImages() {
+        List imageInfo = imageMapper.getAllImages();
+        for(int i=0;i<imageInfo.size();i++){
+            String newUrl = ((ImageInfo)imageInfo.get(i)).getUrl().replace("localhost",getCurrentIp().toString());
+            System.out.println(newUrl);
+            ((ImageInfo)imageInfo.get(i)).setUrl(newUrl);
+        }
         return imageMapper.getAllImages();
     }
+
+    public static InetAddress getCurrentIp() {
+        try {
+            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+            while (networkInterfaces.hasMoreElements()) {
+                NetworkInterface ni = (NetworkInterface) networkInterfaces.nextElement();
+                Enumeration<InetAddress> nias = ni.getInetAddresses();
+                while (nias.hasMoreElements()) {
+                    InetAddress ia = (InetAddress) nias.nextElement();
+                    if (!ia.isLinkLocalAddress() && !ia.isLoopbackAddress() && ia instanceof Inet4Address) {
+                        return ia;
+                    }
+                }
+            }
+        } catch (SocketException e) {
+        }
+        return null;
+    }
+
     @Override
     public Stream<Path> loadAll() {
         try {
